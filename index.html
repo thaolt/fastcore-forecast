@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forecast Application</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+        .form-container {
+            width: 400px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .form-container label {
+            width: 60%;
+            margin-bottom: 10px;
+        }
+        .form-container input {
+            width: 35%;
+            margin-bottom: 10px;
+        }
+        .form-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .form-container button:hover {
+            background-color: #0056b3;
+        }
+        .chart-container {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .chart-container::before {
+            content: "";
+            display: block;
+            padding-top: 56.25%; /* 16:9 aspect ratio */
+        }
+        .chart-container canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .results-container {
+            width: 100%;
+        }
+        .results-container textarea {
+            width: 100%;
+        }
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+    </style>
+</head>
+<body>
+    <h1>Forecast Application</h1>
+    <div class="container">
+        <div class="form-container">
+            <label for="initialInvestment">Initial Investment:</label>
+            <input type="number" id="initialInvestment" value="2770">
+
+            <label for="colocationExpense">Colocation Expense:</label>
+            <input type="number" id="colocationExpense" value="100">
+
+            <label for="marketingExpense">Marketing Expense:</label>
+            <input type="number" id="marketingExpense" value="50">
+
+            <label for="months">Months:</label>
+            <input type="number" id="months" value="36">
+
+            <label for="pricePerGB">Price per GB:</label>
+            <input type="number" id="pricePerGB" value="0.12">
+
+            <label for="avgGBPerUser">Average GB per User:</label>
+            <input type="number" id="avgGBPerUser" value="5">
+
+            <label for="initialUsers">Initial Users:</label>
+            <input type="number" id="initialUsers" value="0">
+
+            <label for="initialCompanies">Initial Companies:</label>
+            <input type="number" id="initialCompanies" value="1">
+
+            <label for="minEmployees">Min Employees per Company:</label>
+            <input type="number" id="minEmployees" value="5">
+
+            <label for="maxEmployees">Max Employees per Company:</label>
+            <input type="number" id="maxEmployees" value="200">
+
+            <label for="meanCompanySize">Mean Company Size:</label>
+            <input type="number" id="meanCompanySize" value="25">
+
+            <label for="acquisitionRate">Acquisition Rate:</label>
+            <input type="number" id="acquisitionRate" value="0.6">
+
+            <label for="initialStorage">Initial Storage (GB):</label>
+            <input type="number" id="initialStorage" value="8000">
+
+            <label for="costPerGB">Cost per GB extra:</label>
+            <input type="number" id="costPerGB" value="0.08">
+
+            <button onclick="runForecast()">Run Forecast</button>
+        </div>
+        <div class="chart-container">
+            <canvas id="forecastChart"></canvas>
+        </div>
+    </div>
+    <div class="container">
+        <div class="results-container">
+            <textarea id="resultsText" rows="15" readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        let forecastChart;
+
+        function weightedRandomChoice(weights) {
+            const totalWeight = weights.reduce((a, b) => a + b, 0);
+            const random = Math.random() * totalWeight;
+            let cumulativeWeight = 0;
+            for (let i = 0; i < weights.length; i++) {
+                cumulativeWeight += weights[i];
+                if (random < cumulativeWeight) {
+                    return i;
+                }
+            }
+        }
+
+        function runForecast() {
+            const initialInvestment = parseFloat(document.getElementById('initialInvestment').value);
+            const colocationExpense = parseFloat(document.getElementById('colocationExpense').value);
+            const marketingExpense = parseFloat(document.getElementById('marketingExpense').value);
+            const months = parseInt(document.getElementById('months').value);
+            const pricePerGB = parseFloat(document.getElementById('pricePerGB').value);
+            const avgGBPerUser = parseFloat(document.getElementById('avgGBPerUser').value);
+            const initialUsers = parseInt(document.getElementById('initialUsers').value);
+            const initialCompanies = parseInt(document.getElementById('initialCompanies').value);
+            const minEmployees = parseInt(document.getElementById('minEmployees').value);
+            const maxEmployees = parseInt(document.getElementById('maxEmployees').value);
+            const acquisitionRate = parseFloat(document.getElementById('acquisitionRate').value);
+            const meanCompanySize = parseFloat(document.getElementById('meanCompanySize').value);
+            const costPerGB = parseFloat(document.getElementById('costPerGB').value);
+            const initialStorage = parseFloat(document.getElementById('initialStorage').value);
+
+            const expenses = {
+                colocation: colocationExpense,
+                marketing: marketingExpense
+            };
+
+            let companyGrowth = [initialCompanies];
+            let userGrowth = [initialUsers];
+            let monthlyStorageUsage = [];
+            let monthlyRevenue = [];
+            let totalMonthlyExpense = colocationExpense + marketingExpense;
+            let oneTimeExtraUsageCost = 0;
+            let extraUsageApplied = false;
+
+            for (let month = 1; month <= months; month++) {
+                const newCompanies = companyGrowth[companyGrowth.length - 1] * acquisitionRate * Math.exp(-companyGrowth[companyGrowth.length - 1] / 10);
+                companyGrowth.push(companyGrowth[companyGrowth.length - 1] + newCompanies);
+
+                const weights = Array.from({ length: maxEmployees - minEmployees + 1 }, (_, i) => Math.exp(-i / meanCompanySize));
+                const newUsers = newCompanies * (minEmployees + weightedRandomChoice(weights));
+                userGrowth.push(userGrowth[userGrowth.length - 1] + newUsers);
+
+                const usage = userGrowth[userGrowth.length - 1] * avgGBPerUser;
+                monthlyStorageUsage.push(usage);
+                monthlyRevenue.push(usage * pricePerGB);
+
+                if (usage > initialStorage && !extraUsageApplied) {
+                    const extraUsage = usage - initialStorage;
+                    oneTimeExtraUsageCost += extraUsage * costPerGB;
+                    extraUsageApplied = true;
+                }
+            }
+
+            const monthlyNetProfit = monthlyRevenue.map(revenue => revenue - totalMonthlyExpense);
+            let cumulativeProfit = monthlyNetProfit.map((profit, i) => monthlyNetProfit.slice(0, i + 1).reduce((a, b) => a + b, 0) - initialInvestment);
+            cumulativeProfit = cumulativeProfit.map((profit, i) => i === 0 ? profit - oneTimeExtraUsageCost : profit);
+
+            const totalNetProfit = cumulativeProfit[cumulativeProfit.length - 1];
+            const ROI = (totalNetProfit / initialInvestment) * 100;
+
+            const resultsText = document.getElementById('resultsText');
+            resultsText.value = "\nCompany and User Growth Metrics:\n";
+            companyGrowth.forEach((companies, month) => {
+                resultsText.value += `Month ${month + 1}: ${companies.toFixed(0)} companies, ${userGrowth[month].toFixed(0)} users\n`;
+            });
+            resultsText.value += "-----------------------------------\n";
+            resultsText.value += `Price per GB: $${pricePerGB.toFixed(2)}\n`;
+            resultsText.value += `Average GB per user: ${avgGBPerUser} GB\n`;
+            resultsText.value += `Total Net Profit after ${months} months: $${totalNetProfit.toFixed(2)}\n`;
+            resultsText.value += `ROI after ${months} months: ${ROI.toFixed(2)}%\n`;
+
+            const breakEvenMonth = cumulativeProfit.findIndex(profit => profit >= 0);
+            if (breakEvenMonth !== -1) {
+                resultsText.value += `Break-even at month ${breakEvenMonth + 1}: ${companyGrowth[breakEvenMonth].toFixed(0)} companies, ${userGrowth[breakEvenMonth].toFixed(0)} users\n`;
+            } else {
+                resultsText.value += "No break-even point within the given timeframe.\n";
+            }
+
+            resultsText.scrollTop = resultsText.scrollHeight;
+
+            const ctx = document.getElementById('forecastChart').getContext('2d');
+            if (forecastChart) {
+                forecastChart.destroy();
+            }
+            forecastChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: months }, (_, i) => i + 1),
+                    datasets: [
+                        {
+                            label: 'Cumulative Profit',
+                            data: cumulativeProfit,
+                            borderColor: 'blue',
+                            fill: false
+                        },
+                        {
+                            label: 'Number of Users',
+                            data: userGrowth,
+                            borderColor: 'green',
+                            fill: false,
+                            borderDash: [5, 5]
+                        },
+                        {
+                            label: 'Number of Companies',
+                            data: companyGrowth,
+                            borderColor: 'orange',
+                            fill: false,
+                            borderDash: [5, 5]
+                        },
+                        {
+                            label: 'Total GB Usage',
+                            data: monthlyStorageUsage,
+                            borderColor: 'purple',
+                            fill: false,
+                            borderDash: [5, 5]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Months'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Cumulative Profit (USD) / Users / Companies / GB'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
