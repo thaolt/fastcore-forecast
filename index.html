@@ -32,9 +32,13 @@
             width: 60%;
             margin-bottom: 10px;
         }
-        .form-container input {
+        .form-container input, .form-container select {
             width: 35%;
             margin-bottom: 10px;
+        }
+        .form-container select {
+            padding: 1px 2px;
+            border-width: 1.6px;
         }
         .form-container button {
             width: 100%;
@@ -110,50 +114,56 @@
     <h1>FastCORE Forecast</h1>
     <div class="container">
         <div class="form-container">
+            <label for="parameterSet">Parameter Set:</label>
+            <select id="parameterSet" onchange="updateParameters()">
+                <option value="Physical Server/Co-location">Physical Server/Co-location</option>
+                <option value="Cloud Server/S3">Cloud Server/S3</option>
+            </select>
+
             <label for="initialInvestment">Initial Investment:</label>
-            <input type="number" id="initialInvestment" value="2770">
+            <input type="number" id="initialInvestment">
 
             <label for="colocationExpense">Colocation Expense:</label>
-            <input type="number" id="colocationExpense" value="100">
+            <input type="number" id="colocationExpense">
 
             <label for="marketingExpense">Marketing Expense:</label>
-            <input type="number" id="marketingExpense" value="50">
+            <input type="number" id="marketingExpense">
 
             <label for="months">Months:</label>
-            <input type="number" id="months" value="36">
+            <input type="number" id="months">
 
             <label for="pricePerGB">Price per GB:</label>
-            <input type="number" id="pricePerGB" value="0.12">
+            <input type="number" id="pricePerGB">
 
             <label for="avgGBPerUser">Average GB per User:</label>
-            <input type="number" id="avgGBPerUser" value="5">
+            <input type="number" id="avgGBPerUser">
 
             <label for="initialUsers">Initial Users:</label>
-            <input type="number" id="initialUsers" value="0">
+            <input type="number" id="initialUsers">
 
             <label for="initialCompanies">Initial Companies:</label>
-            <input type="number" id="initialCompanies" value="1">
+            <input type="number" id="initialCompanies">
 
             <label for="minEmployees">Min Employees per Company:</label>
-            <input type="number" id="minEmployees" value="5">
+            <input type="number" id="minEmployees">
 
             <label for="maxEmployees">Max Employees per Company:</label>
-            <input type="number" id="maxEmployees" value="200">
+            <input type="number" id="maxEmployees">
 
             <label for="meanCompanySize">Mean Company Size:</label>
-            <input type="number" id="meanCompanySize" value="25">
+            <input type="number" id="meanCompanySize">
 
             <label for="acquisitionRate">Acquisition Rate:</label>
-            <input type="number" id="acquisitionRate" value="0.6">
+            <input type="number" id="acquisitionRate">
 
             <label for="initialStorage">Initial Storage (GB):</label>
-            <input type="number" id="initialStorage" value="8000">
+            <input type="number" id="initialStorage">
 
             <label for="costPerGB">Cost per GB extra:</label>
-            <input type="number" id="costPerGB" value="0.08">
+            <input type="number" id="costPerGB">
 
             <label for="iterations">Iterations:</label>
-            <input type="number" id="iterations" value="100">
+            <input type="number" id="iterations">
 
             <button onclick="runForecast()">Run Forecast</button>
         </div>
@@ -177,6 +187,70 @@
     </div>
 
     <script>
+        const parameterSets = {
+            "Physical Server/Co-location": {
+                initialInvestment: 2770,
+                colocationExpense: 100,
+                marketingExpense: 50,
+                months: 36,
+                pricePerGB: 0.12,
+                avgGBPerUser: 5,
+                initialUsers: 0,
+                initialCompanies: 1,
+                minEmployees: 5,
+                maxEmployees: 200,
+                meanCompanySize: 20,
+                acquisitionRate: 0.5,
+                initialStorage: 8000,
+                costPerGB: 0.08,
+                iterations: 100
+            },
+            "Cloud Server/S3": {
+                initialInvestment: 0,
+                colocationExpense: 200,
+                marketingExpense: 50,
+                months: 36,
+                pricePerGB: 0.12,
+                avgGBPerUser: 5,
+                initialUsers: 0,
+                initialCompanies: 1,
+                minEmployees: 5,
+                maxEmployees: 200,
+                meanCompanySize: 20,
+                acquisitionRate: 0.5,
+                initialStorage: 200,
+                costPerGB: 0.02,
+                iterations: 100
+            }
+        };
+
+        const defaultSet = "Physical Server/Co-location";
+
+        function updateParameters() {
+            const selectedSet = document.getElementById('parameterSet').value;
+            const params = parameterSets[selectedSet];
+            document.getElementById('initialInvestment').value = params.initialInvestment;
+            document.getElementById('colocationExpense').value = params.colocationExpense;
+            document.getElementById('marketingExpense').value = params.marketingExpense;
+            document.getElementById('months').value = params.months;
+            document.getElementById('pricePerGB').value = params.pricePerGB;
+            document.getElementById('avgGBPerUser').value = params.avgGBPerUser;
+            document.getElementById('initialUsers').value = params.initialUsers;
+            document.getElementById('initialCompanies').value = params.initialCompanies;
+            document.getElementById('minEmployees').value = params.minEmployees;
+            document.getElementById('maxEmployees').value = params.maxEmployees;
+            document.getElementById('meanCompanySize').value = params.meanCompanySize;
+            document.getElementById('acquisitionRate').value = params.acquisitionRate;
+            document.getElementById('initialStorage').value = params.initialStorage;
+            document.getElementById('costPerGB').value = params.costPerGB;
+            document.getElementById('iterations').value = params.iterations;
+        }
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.getElementById('parameterSet').value = defaultSet;
+            updateParameters();
+        });
+
         let forecastChart;
         let cancelForecastFlag = false;
 
@@ -328,56 +402,64 @@
                             label: 'Cumulative Profit',
                             data: avgCumulativeProfit,
                             borderColor: 'blue',
-                            fill: false
+                            fill: false,
+                            borderWidth: 2
                         },
                         {
                             label: 'Profit Std Dev',
                             data: avgCumulativeProfit.map((profit, i) => profit + stdCumulativeProfit[i]),
                             borderColor: 'blue',
                             fill: '+1',
-                            backgroundColor: 'rgba(0, 0, 255, 0.2)'
+                            backgroundColor: 'rgba(0, 0, 255, 0.2)',
+                            borderWidth: 1
                         },
                         {
                             label: 'Profit Std Dev Lower',
                             data: avgCumulativeProfit.map((profit, i) => profit - stdCumulativeProfit[i]),
                             borderColor: 'blue',
                             fill: '-1',
-                            backgroundColor: 'rgba(0, 0, 255, 0.2)'
+                            backgroundColor: 'rgba(0, 0, 255, 0.2)',
+                            borderWidth: 1
                         },
                         {
                             label: 'Number of Users',
                             data: userGrowth,
                             borderColor: 'green',
                             fill: false,
-                            borderDash: [5, 5]
+                            borderDash: [5, 5],
+                            borderWidth: 2
                         },
                         {
                             label: 'Total GB Usage',
                             data: avgMonthlyStorageUsage,
                             borderColor: 'purple',
                             fill: false,
-                            borderDash: [5, 5]
+                            borderDash: [5, 5],
+                            borderWidth: 2
                         },
                         {
                             label: 'Storage Std Dev',
                             data: avgMonthlyStorageUsage.map((usage, i) => usage + stdMonthlyStorageUsage[i]),
                             borderColor: 'purple',
                             fill: '+1',
-                            backgroundColor: 'rgba(128, 0, 128, 0.2)'
+                            backgroundColor: 'rgba(128, 0, 128, 0.2)',
+                            borderWidth: 1
                         },
                         {
                             label: 'Storage Std Dev Lower',
                             data: avgMonthlyStorageUsage.map((usage, i) => usage - stdMonthlyStorageUsage[i]),
                             borderColor: 'purple',
                             fill: '-1',
-                            backgroundColor: 'rgba(128, 0, 128, 0.2)'
+                            backgroundColor: 'rgba(128, 0, 128, 0.2)',
+                            borderWidth: 1
                         },
                         {
                             label: 'Break-even',
                             data: Array(months).fill(0),
                             borderColor: 'red',
                             borderDash: [5, 5],
-                            fill: false
+                            fill: false,
+                            borderWidth: 2
                         }
                     ]
                 },
@@ -388,14 +470,51 @@
                         x: {
                             title: {
                                 display: true,
-                                text: 'Months'
+                                text: 'Months',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                display: true,
+                                color: 'rgba(200, 200, 200, 0.2)'
                             }
                         },
                         y: {
                             title: {
                                 display: true,
-                                text: 'Cumulative Profit (USD) / Users / GB'
+                                text: 'Cumulative Profit (USD) / Users / GB',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                display: true,
+                                color: 'rgba(200, 200, 200, 0.2)'
                             }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    elements: {
+                        point: {
+                            radius: 0
                         }
                     }
                 }

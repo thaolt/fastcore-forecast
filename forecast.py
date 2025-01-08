@@ -4,6 +4,47 @@ from tkinter import ttk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
+# Predefined parameter sets
+parameter_sets = {
+    "Physical Server/Co-location": {
+        "initial_investment": 2770,
+        "colocation_expense": 100,
+        "marketing_expense": 50,
+        "months": 36,
+        "price_per_gb": 0.12,
+        "avg_gb_per_user": 5,
+        "initial_users": 0,
+        "initial_companies": 1,
+        "min_employees_per_company": 5,
+        "max_employees_per_company": 200,
+        "mean_company_size": 20,
+        "acquisition_rate": 0.5,
+        "initial_storage": 8000,
+        "cost_per_gb": 0.08,
+        "iterations": 100
+    },
+    "Cloud Server/S3": {
+        "initial_investment": 0,
+        "colocation_expense": 200,
+        "marketing_expense": 50,
+        "months": 36,
+        "price_per_gb": 0.12,
+        "avg_gb_per_user": 5,
+        "initial_users": 0,
+        "initial_companies": 1,
+        "min_employees_per_company": 5,
+        "max_employees_per_company": 200,
+        "mean_company_size": 20,
+        "acquisition_rate": 0.5,
+        "initial_storage": 200,
+        "cost_per_gb": 0.02,
+        "iterations": 100
+    }
+}
+
+# Default parameter set
+default_set = "Physical Server/Co-location"
+
 # Function to run the forecast
 def run_forecast():
     global cancel_forecast
@@ -155,68 +196,37 @@ def run_forecast():
 # Function to update input fields based on selected parameter set
 def update_parameters(event):
     selected_set = parameter_set_combobox.get()
-    if selected_set == "Physical Server/Co-location":
-        initial_investment_entry.delete(0, tk.END)
-        initial_investment_entry.insert(0, "2770")
-        colocation_expense_entry.delete(0, tk.END)
-        colocation_expense_entry.insert(0, "100")
-        marketing_expense_entry.delete(0, tk.END)
-        marketing_expense_entry.insert(0, "50")
-        months_entry.delete(0, tk.END)
-        months_entry.insert(0, "36")
-        price_per_gb_entry.delete(0, tk.END)
-        price_per_gb_entry.insert(0, "0.12")
-        avg_gb_per_user_entry.delete(0, tk.END)
-        avg_gb_per_user_entry.insert(0, "5")
-        initial_users_entry.delete(0, tk.END)
-        initial_users_entry.insert(0, "0")
-        initial_companies_entry.delete(0, tk.END)
-        initial_companies_entry.insert(0, "1")
-        min_employees_entry.delete(0, tk.END)
-        min_employees_entry.insert(0, "5")
-        max_employees_entry.delete(0, tk.END)
-        max_employees_entry.insert(0, "200")
-        mean_company_size_entry.delete(0, tk.END)
-        mean_company_size_entry.insert(0, "20")
-        acquisition_rate_entry.delete(0, tk.END)
-        acquisition_rate_entry.insert(0, "0.5")
-        initial_storage_entry.delete(0, tk.END)
-        initial_storage_entry.insert(0, "8000")
-        cost_per_gb_entry.delete(0, tk.END)
-        cost_per_gb_entry.insert(0, "0.08")
-        iterations_entry.delete(0, tk.END)
-        iterations_entry.insert(0, "100")
-    elif selected_set == "Cloud Server/S3":
-        initial_investment_entry.delete(0, tk.END)
-        initial_investment_entry.insert(0, "0")
-        colocation_expense_entry.delete(0, tk.END)
-        colocation_expense_entry.insert(0, "200")
-        marketing_expense_entry.delete(0, tk.END)
-        marketing_expense_entry.insert(0, "50")
-        months_entry.delete(0, tk.END)
-        months_entry.insert(0, "36")
-        price_per_gb_entry.delete(0, tk.END)
-        price_per_gb_entry.insert(0, "0.12")
-        avg_gb_per_user_entry.delete(0, tk.END)
-        avg_gb_per_user_entry.insert(0, "5")
-        initial_users_entry.delete(0, tk.END)
-        initial_users_entry.insert(0, "0")
-        initial_companies_entry.delete(0, tk.END)
-        initial_companies_entry.insert(0, "1")
-        min_employees_entry.delete(0, tk.END)
-        min_employees_entry.insert(0, "5")
-        max_employees_entry.delete(0, tk.END)
-        max_employees_entry.insert(0, "200")
-        mean_company_size_entry.delete(0, tk.END)
-        mean_company_size_entry.insert(0, "20")
-        acquisition_rate_entry.delete(0, tk.END)
-        acquisition_rate_entry.insert(0, "0.5")
-        initial_storage_entry.delete(0, tk.END)
-        initial_storage_entry.insert(0, "200")
-        cost_per_gb_entry.delete(0, tk.END)
-        cost_per_gb_entry.insert(0, "0.02")
-        iterations_entry.delete(0, tk.END)
-        iterations_entry.insert(0, "100")
+    params = parameter_sets[selected_set]
+    initial_investment_entry.delete(0, tk.END)
+    initial_investment_entry.insert(0, params["initial_investment"])
+    colocation_expense_entry.delete(0, tk.END)
+    colocation_expense_entry.insert(0, params["colocation_expense"])
+    marketing_expense_entry.delete(0, tk.END)
+    marketing_expense_entry.insert(0, params["marketing_expense"])
+    months_entry.delete(0, tk.END)
+    months_entry.insert(0, params["months"])
+    price_per_gb_entry.delete(0, tk.END)
+    price_per_gb_entry.insert(0, params["price_per_gb"])
+    avg_gb_per_user_entry.delete(0, tk.END)
+    avg_gb_per_user_entry.insert(0, params["avg_gb_per_user"])
+    initial_users_entry.delete(0, tk.END)
+    initial_users_entry.insert(0, params["initial_users"])
+    initial_companies_entry.delete(0, tk.END)
+    initial_companies_entry.insert(0, params["initial_companies"])
+    min_employees_entry.delete(0, tk.END)
+    min_employees_entry.insert(0, params["min_employees_per_company"])
+    max_employees_entry.delete(0, tk.END)
+    max_employees_entry.insert(0, params["max_employees_per_company"])
+    mean_company_size_entry.delete(0, tk.END)
+    mean_company_size_entry.insert(0, params["mean_company_size"])
+    acquisition_rate_entry.delete(0, tk.END)
+    acquisition_rate_entry.insert(0, params["acquisition_rate"])
+    initial_storage_entry.delete(0, tk.END)
+    initial_storage_entry.insert(0, params["initial_storage"])
+    cost_per_gb_entry.delete(0, tk.END)
+    cost_per_gb_entry.insert(0, params["cost_per_gb"])
+    iterations_entry.delete(0, tk.END)
+    iterations_entry.insert(0, params["iterations"])
 
 # Create the main window
 root = tk.Tk()
@@ -230,7 +240,7 @@ root.grid_rowconfigure(17, weight=1)
 
 # Create and place the parameter set dropdown
 ttk.Label(root, text="Parameter Set:").grid(row=0, column=0, sticky="ew")
-parameter_set_combobox = ttk.Combobox(root, values=["Physical Server/Co-location", "Cloud Server/S3"])
+parameter_set_combobox = ttk.Combobox(root, values=list(parameter_sets.keys()))
 parameter_set_combobox.grid(row=0, column=1, sticky="ew")
 parameter_set_combobox.bind("<<ComboboxSelected>>", update_parameters)
 parameter_set_combobox.current(0)  # Set default selection
@@ -238,77 +248,77 @@ parameter_set_combobox.current(0)  # Set default selection
 # Create and place the input fields with default values
 ttk.Label(root, text="Initial Investment:").grid(row=1, column=0, sticky="ew")
 initial_investment_entry = ttk.Entry(root)
-initial_investment_entry.insert(0, "2770")
+initial_investment_entry.insert(0, parameter_sets[default_set]["initial_investment"])
 initial_investment_entry.grid(row=1, column=1, sticky="ew")
 
 ttk.Label(root, text="Colocation Expense:").grid(row=2, column=0, sticky="ew")
 colocation_expense_entry = ttk.Entry(root)
-colocation_expense_entry.insert(0, "100")
+colocation_expense_entry.insert(0, parameter_sets[default_set]["colocation_expense"])
 colocation_expense_entry.grid(row=2, column=1, sticky="ew")
 
 ttk.Label(root, text="Marketing Expense:").grid(row=3, column=0, sticky="ew")
 marketing_expense_entry = ttk.Entry(root)
-marketing_expense_entry.insert(0, "50")
+marketing_expense_entry.insert(0, parameter_sets[default_set]["marketing_expense"])
 marketing_expense_entry.grid(row=3, column=1, sticky="ew")
 
 ttk.Label(root, text="Months:").grid(row=4, column=0, sticky="ew")
 months_entry = ttk.Entry(root)
-months_entry.insert(0, "36")
+months_entry.insert(0, parameter_sets[default_set]["months"])
 months_entry.grid(row=4, column=1, sticky="ew")
 
 ttk.Label(root, text="Price per GB:").grid(row=5, column=0, sticky="ew")
 price_per_gb_entry = ttk.Entry(root)
-price_per_gb_entry.insert(0, "0.12")
+price_per_gb_entry.insert(0, parameter_sets[default_set]["price_per_gb"])
 price_per_gb_entry.grid(row=5, column=1, sticky="ew")
 
 ttk.Label(root, text="Average GB per User:").grid(row=6, column=0, sticky="ew")
 avg_gb_per_user_entry = ttk.Entry(root)
-avg_gb_per_user_entry.insert(0, "5")
+avg_gb_per_user_entry.insert(0, parameter_sets[default_set]["avg_gb_per_user"])
 avg_gb_per_user_entry.grid(row=6, column=1, sticky="ew")
 
 ttk.Label(root, text="Initial Users:").grid(row=7, column=0, sticky="ew")
 initial_users_entry = ttk.Entry(root)
-initial_users_entry.insert(0, "0")
+initial_users_entry.insert(0, parameter_sets[default_set]["initial_users"])
 initial_users_entry.grid(row=7, column=1, sticky="ew")
 
 ttk.Label(root, text="Initial Companies:").grid(row=8, column=0, sticky="ew")
 initial_companies_entry = ttk.Entry(root)
-initial_companies_entry.insert(0, "1")
+initial_companies_entry.insert(0, parameter_sets[default_set]["initial_companies"])
 initial_companies_entry.grid(row=8, column=1, sticky="ew")
 
 ttk.Label(root, text="Min Employees per Company:").grid(row=9, column=0, sticky="ew")
 min_employees_entry = ttk.Entry(root)
-min_employees_entry.insert(0, "5")
+min_employees_entry.insert(0, parameter_sets[default_set]["min_employees_per_company"])
 min_employees_entry.grid(row=9, column=1, sticky="ew")
 
 ttk.Label(root, text="Max Employees per Company:").grid(row=10, column=0, sticky="ew")
 max_employees_entry = ttk.Entry(root)
-max_employees_entry.insert(0, "200")
+max_employees_entry.insert(0, parameter_sets[default_set]["max_employees_per_company"])
 max_employees_entry.grid(row=10, column=1, sticky="ew")
 
 ttk.Label(root, text="Mean Company Size:").grid(row=11, column=0, sticky="ew")
 mean_company_size_entry = ttk.Entry(root)
-mean_company_size_entry.insert(0, "20")
+mean_company_size_entry.insert(0, parameter_sets[default_set]["mean_company_size"])
 mean_company_size_entry.grid(row=11, column=1, sticky="ew")
 
 ttk.Label(root, text="Acquisition Rate:").grid(row=12, column=0, sticky="ew")
 acquisition_rate_entry = ttk.Entry(root)
-acquisition_rate_entry.insert(0, "0.5")
+acquisition_rate_entry.insert(0, parameter_sets[default_set]["acquisition_rate"])
 acquisition_rate_entry.grid(row=12, column=1, sticky="ew")
 
 ttk.Label(root, text="Initial Storage (GB):").grid(row=13, column=0, sticky="ew")
 initial_storage_entry = ttk.Entry(root)
-initial_storage_entry.insert(0, "8000")
+initial_storage_entry.insert(0, parameter_sets[default_set]["initial_storage"])
 initial_storage_entry.grid(row=13, column=1, sticky="ew")
 
 ttk.Label(root, text="Cost per GB extra:").grid(row=14, column=0, sticky="ew")
 cost_per_gb_entry = ttk.Entry(root)
-cost_per_gb_entry.insert(0, "0.08")
+cost_per_gb_entry.insert(0, parameter_sets[default_set]["cost_per_gb"])
 cost_per_gb_entry.grid(row=14, column=1, sticky="ew")
 
 ttk.Label(root, text="Iterations:").grid(row=15, column=0, sticky="ew")
 iterations_entry = ttk.Entry(root)
-iterations_entry.insert(0, "100")
+iterations_entry.insert(0, parameter_sets[default_set]["iterations"])
 iterations_entry.grid(row=15, column=1, sticky="ew")
 
 # Create and place the run button
