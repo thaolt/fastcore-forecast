@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forecast Application</title>
+    <title>FastCORE FastCORE Forecasttitle>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -72,14 +72,42 @@
         .results-container textarea {
             width: 100%;
         }
-        canvas {
-            width: 100% !important;
-            height: 100% !important;
+        .progress-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        .progress-container .progress-box {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .progress-container .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f3f3f3;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .progress-container .progress-bar div {
+            height: 100%;
+            background-color: #007bff;
+            width: 0;
         }
     </style>
 </head>
 <body>
-    <h1>Forecast Application</h1>
+    <h1>FastCORE Forecast</h1>
     <div class="container">
         <div class="form-container">
             <label for="initialInvestment">Initial Investment:</label>
@@ -124,6 +152,9 @@
             <label for="costPerGB">Cost per GB extra:</label>
             <input type="number" id="costPerGB" value="0.08">
 
+            <label for="iterations">Iterations:</label>
+            <input type="number" id="iterations" value="100">
+
             <button onclick="runForecast()">Run Forecast</button>
         </div>
         <div class="chart-container">
@@ -135,9 +166,19 @@
             <textarea id="resultsText" rows="15" readonly></textarea>
         </div>
     </div>
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-box">
+            <p>Running forecast, please wait...</p>
+            <div class="progress-bar">
+                <div></div>
+            </div>
+            <button onclick="cancelForecast()">Cancel</button>
+        </div>
+    </div>
 
     <script>
         let forecastChart;
+        let cancelForecastFlag = false;
 
         function weightedRandomChoice(weights) {
             const totalWeight = weights.reduce((a, b) => a + b, 0);
@@ -151,7 +192,15 @@
             }
         }
 
-        function runForecast() {
+        function cancelForecast() {
+            cancelForecastFlag = true;
+            document.getElementById('progressContainer').style.display = 'none';
+        }
+
+        async function runForecast() {
+            cancelForecastFlag = false;
+            document.getElementById('progressContainer').style.display = 'flex';
+
             const initialInvestment = parseFloat(document.getElementById('initialInvestment').value);
             const colocationExpense = parseFloat(document.getElementById('colocationExpense').value);
             const marketingExpense = parseFloat(document.getElementById('marketingExpense').value);
@@ -166,60 +215,100 @@
             const meanCompanySize = parseFloat(document.getElementById('meanCompanySize').value);
             const costPerGB = parseFloat(document.getElementById('costPerGB').value);
             const initialStorage = parseFloat(document.getElementById('initialStorage').value);
+            const iterations = parseInt(document.getElementById('iterations').value);
 
             const expenses = {
                 colocation: colocationExpense,
                 marketing: marketingExpense
             };
 
-            let companyGrowth = [initialCompanies];
-            let userGrowth = [initialUsers];
-            let monthlyStorageUsage = [];
-            let monthlyRevenue = [];
-            let totalMonthlyExpense = colocationExpense + marketingExpense;
-            let oneTimeExtraUsageCost = 0;
-            let extraUsageApplied = false;
+            let cumulativeProfits = [];
+            let monthlyStorageUsages = [];
+            let breakEvenMonths = [];
+            let noReturnCount = 0;
+            let userGrowth = [];
 
-            for (let month = 1; month <= months; month++) {
-                const newCompanies = companyGrowth[companyGrowth.length - 1] * acquisitionRate * Math.exp(-companyGrowth[companyGrowth.length - 1] / 10);
-                companyGrowth.push(companyGrowth[companyGrowth.length - 1] + newCompanies);
-
-                const weights = Array.from({ length: maxEmployees - minEmployees + 1 }, (_, i) => Math.exp(-i / meanCompanySize));
-                const newUsers = newCompanies * (minEmployees + weightedRandomChoice(weights));
-                userGrowth.push(userGrowth[userGrowth.length - 1] + newUsers);
-
-                const usage = userGrowth[userGrowth.length - 1] * avgGBPerUser;
-                monthlyStorageUsage.push(usage);
-                monthlyRevenue.push(usage * pricePerGB);
-
-                if (usage > initialStorage && !extraUsageApplied) {
-                    const extraUsage = usage - initialStorage;
-                    oneTimeExtraUsageCost += extraUsage * costPerGB;
-                    extraUsageApplied = true;
+            for (let i = 0; i < iterations; i++) {
+                if (cancelForecastFlag) {
+                    break;
                 }
+
+                let companyGrowth = [initialCompanies];
+                userGrowth = [initialUsers];
+                let monthlyStorageUsage = [];
+                let monthlyRevenue = [];
+                let totalMonthlyExpense = colocationExpense + marketingExpense;
+                let oneTimeExtraUsageCost = 0;
+                let extraUsageApplied = false;
+
+                for (let month = 1; month <= months; month++) {
+                    const newCompanies = companyGrowth[companyGrowth.length - 1] * acquisitionRate * Math.exp(-companyGrowth[companyGrowth.length - 1] / 10);
+                    companyGrowth.push(companyGrowth[companyGrowth.length - 1] + newCompanies);
+
+                    const weights = Array.from({ length: maxEmployees - minEmployees + 1 }, (_, i) => Math.exp(-i / meanCompanySize));
+                    const newUsers = newCompanies * (minEmployees + weightedRandomChoice(weights));
+                    userGrowth.push(userGrowth[userGrowth.length - 1] + newUsers);
+
+                    const usage = userGrowth[userGrowth.length - 1] * avgGBPerUser;
+                    monthlyStorageUsage.push(usage);
+                    monthlyRevenue.push(usage * pricePerGB);
+
+                    if (usage > initialStorage && !extraUsageApplied) {
+                        const extraUsage = usage - initialStorage;
+                        oneTimeExtraUsageCost += extraUsage * costPerGB;
+                        extraUsageApplied = true;
+                    }
+                }
+
+                const monthlyNetProfit = monthlyRevenue.map(revenue => revenue - totalMonthlyExpense);
+                let cumulativeProfit = monthlyNetProfit.map((profit, i) => monthlyNetProfit.slice(0, i + 1).reduce((a, b) => a + b, 0) - initialInvestment);
+                cumulativeProfit = cumulativeProfit.map((profit, i) => i === 0 ? profit - oneTimeExtraUsageCost : profit);
+
+                cumulativeProfits.push(cumulativeProfit);
+                monthlyStorageUsages.push(monthlyStorageUsage);
+                const breakEvenMonth = cumulativeProfit.findIndex(profit => profit >= 0);
+                breakEvenMonths.push(breakEvenMonth);
+                if (breakEvenMonth === -1) {
+                    noReturnCount += 1;
+                }
+
+                document.querySelector('.progress-bar div').style.width = `${((i + 1) / iterations) * 100}%`;
+                await new Promise(resolve => setTimeout(resolve, 10)); // Simulate async work
             }
 
-            const monthlyNetProfit = monthlyRevenue.map(revenue => revenue - totalMonthlyExpense);
-            let cumulativeProfit = monthlyNetProfit.map((profit, i) => monthlyNetProfit.slice(0, i + 1).reduce((a, b) => a + b, 0) - initialInvestment);
-            cumulativeProfit = cumulativeProfit.map((profit, i) => i === 0 ? profit - oneTimeExtraUsageCost : profit);
+            document.getElementById('progressContainer').style.display = 'none';
 
-            const totalNetProfit = cumulativeProfit[cumulativeProfit.length - 1];
+            if (cancelForecastFlag) {
+                document.getElementById('resultsText').value = "Forecast cancelled.\n";
+                return;
+            }
+
+            const avgCumulativeProfit = cumulativeProfits[0].map((_, i) => cumulativeProfits.reduce((sum, profit) => sum + profit[i], 0) / cumulativeProfits.length);
+            const stdCumulativeProfit = cumulativeProfits[0].map((_, i) => Math.sqrt(cumulativeProfits.reduce((sum, profit) => sum + Math.pow(profit[i] - avgCumulativeProfit[i], 2), 0) / cumulativeProfits.length));
+            const avgMonthlyStorageUsage = monthlyStorageUsages[0].map((_, i) => monthlyStorageUsages.reduce((sum, usage) => sum + usage[i], 0) / monthlyStorageUsages.length);
+            const stdMonthlyStorageUsage = monthlyStorageUsages[0].map((_, i) => Math.sqrt(monthlyStorageUsages.reduce((sum, usage) => sum + Math.pow(usage[i] - avgMonthlyStorageUsage[i], 2), 0) / monthlyStorageUsages.length));
+            const avgBreakEvenMonth = breakEvenMonths.filter(month => month !== -1).reduce((sum, month) => sum + month, 0) / breakEvenMonths.filter(month => month !== -1).length;
+
+            const totalNetProfit = avgCumulativeProfit[avgCumulativeProfit.length - 1];
             const ROI = (totalNetProfit / initialInvestment) * 100;
+            const riskOfNoReturn = (noReturnCount / iterations) * 100;
 
             const resultsText = document.getElementById('resultsText');
-            resultsText.value = "\nCompany and User Growth Metrics:\n";
-            companyGrowth.forEach((companies, month) => {
-                resultsText.value += `Month ${month + 1}: ${companies.toFixed(0)} companies, ${userGrowth[month].toFixed(0)} users\n`;
+            resultsText.value = "\nCompany and User Growth Metrics (Averaged):\n";
+            userGrowth.forEach((users, month) => {
+                resultsText.value += `Month ${month + 1}: ${users.toFixed(0)} users\n`;
             });
             resultsText.value += "-----------------------------------\n";
             resultsText.value += `Price per GB: $${pricePerGB.toFixed(2)}\n`;
             resultsText.value += `Average GB per user: ${avgGBPerUser} GB\n`;
             resultsText.value += `Total Net Profit after ${months} months: $${totalNetProfit.toFixed(2)}\n`;
             resultsText.value += `ROI after ${months} months: ${ROI.toFixed(2)}%\n`;
+            resultsText.value += `Risk of No Return: ${riskOfNoReturn.toFixed(2)}%\n`;
+            resultsText.value += `Standard Deviation of Cumulative Profit: ${stdCumulativeProfit[stdCumulativeProfit.length - 1].toFixed(2)}\n`;
+            resultsText.value += `Standard Deviation of Monthly Storage Usage: ${stdMonthlyStorageUsage[stdMonthlyStorageUsage.length - 1].toFixed(2)} GB\n`;
 
-            const breakEvenMonth = cumulativeProfit.findIndex(profit => profit >= 0);
-            if (breakEvenMonth !== -1) {
-                resultsText.value += `Break-even at month ${breakEvenMonth + 1}: ${companyGrowth[breakEvenMonth].toFixed(0)} companies, ${userGrowth[breakEvenMonth].toFixed(0)} users\n`;
+            if (avgBreakEvenMonth) {
+                resultsText.value += `Average Break-even at month ${avgBreakEvenMonth + 1}\n`;
             } else {
                 resultsText.value += "No break-even point within the given timeframe.\n";
             }
@@ -237,9 +326,23 @@
                     datasets: [
                         {
                             label: 'Cumulative Profit',
-                            data: cumulativeProfit,
+                            data: avgCumulativeProfit,
                             borderColor: 'blue',
                             fill: false
+                        },
+                        {
+                            label: 'Profit Std Dev',
+                            data: avgCumulativeProfit.map((profit, i) => profit + stdCumulativeProfit[i]),
+                            borderColor: 'blue',
+                            fill: '+1',
+                            backgroundColor: 'rgba(0, 0, 255, 0.2)'
+                        },
+                        {
+                            label: 'Profit Std Dev Lower',
+                            data: avgCumulativeProfit.map((profit, i) => profit - stdCumulativeProfit[i]),
+                            borderColor: 'blue',
+                            fill: '-1',
+                            backgroundColor: 'rgba(0, 0, 255, 0.2)'
                         },
                         {
                             label: 'Number of Users',
@@ -249,18 +352,32 @@
                             borderDash: [5, 5]
                         },
                         {
-                            label: 'Number of Companies',
-                            data: companyGrowth,
-                            borderColor: 'orange',
+                            label: 'Total GB Usage',
+                            data: avgMonthlyStorageUsage,
+                            borderColor: 'purple',
                             fill: false,
                             borderDash: [5, 5]
                         },
                         {
-                            label: 'Total GB Usage',
-                            data: monthlyStorageUsage,
+                            label: 'Storage Std Dev',
+                            data: avgMonthlyStorageUsage.map((usage, i) => usage + stdMonthlyStorageUsage[i]),
                             borderColor: 'purple',
-                            fill: false,
-                            borderDash: [5, 5]
+                            fill: '+1',
+                            backgroundColor: 'rgba(128, 0, 128, 0.2)'
+                        },
+                        {
+                            label: 'Storage Std Dev Lower',
+                            data: avgMonthlyStorageUsage.map((usage, i) => usage - stdMonthlyStorageUsage[i]),
+                            borderColor: 'purple',
+                            fill: '-1',
+                            backgroundColor: 'rgba(128, 0, 128, 0.2)'
+                        },
+                        {
+                            label: 'Break-even',
+                            data: Array(months).fill(0),
+                            borderColor: 'red',
+                            borderDash: [5, 5],
+                            fill: false
                         }
                     ]
                 },
@@ -277,7 +394,7 @@
                         y: {
                             title: {
                                 display: true,
-                                text: 'Cumulative Profit (USD) / Users / Companies / GB'
+                                text: 'Cumulative Profit (USD) / Users / GB'
                             }
                         }
                     }
